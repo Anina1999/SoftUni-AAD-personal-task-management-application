@@ -17,6 +17,8 @@ const TASK_COLUMNS = `
   id,
   title,
   description,
+  priority,
+  due_date AS dueDate,
   created_at AS createdAt,
   updated_at AS updatedAt
 `;
@@ -54,13 +56,14 @@ function prepareStatements(db: Database.Database) {
       `SELECT ${TASK_COLUMNS} FROM tasks WHERE id = @id`,
     ),
     insert: db.prepare<TaskInput, Task>(
-      `INSERT INTO tasks (title, description)
-       VALUES (@title, @description)
+      `INSERT INTO tasks (title, description, priority, due_date)
+       VALUES (@title, @description, @priority, @dueDate)
        RETURNING ${TASK_COLUMNS}`,
     ),
     update: db.prepare<TaskInput & { id: number }, Task>(
       `UPDATE tasks
-       SET title = @title, description = @description, updated_at = ${NOW}
+       SET title = @title, description = @description, priority = @priority,
+           due_date = @dueDate, updated_at = ${NOW}
        WHERE id = @id
        RETURNING ${TASK_COLUMNS}`,
     ),

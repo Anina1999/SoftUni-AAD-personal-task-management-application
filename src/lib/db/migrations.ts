@@ -14,8 +14,11 @@
 import "server-only";
 import type Database from "better-sqlite3";
 
-/** Ordered list of migrations. Index 0 upgrades version 0 -> 1, and so on. */
-const MIGRATIONS: readonly string[] = [
+/**
+ * Ordered list of migrations. Index 0 upgrades version 0 -> 1, and so on.
+ * Exported so tests can build a database at an older version.
+ */
+export const MIGRATIONS: readonly string[] = [
   // v1: tasks table
   `
   CREATE TABLE tasks (
@@ -26,6 +29,14 @@ const MIGRATIONS: readonly string[] = [
     updated_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
   );
   CREATE INDEX idx_tasks_created_at ON tasks (created_at DESC, id DESC);
+  `,
+  // v2: optional priority (1 = most important, default 3) and due date (YYYY-MM-DD).
+  // `date(x) IS x` only holds for a real date already written as YYYY-MM-DD.
+  `
+  ALTER TABLE tasks ADD COLUMN priority INTEGER NOT NULL DEFAULT 3
+    CHECK (priority IN (1, 2, 3, 4));
+  ALTER TABLE tasks ADD COLUMN due_date TEXT
+    CHECK (due_date IS NULL OR date(due_date) IS due_date);
   `,
 ];
 

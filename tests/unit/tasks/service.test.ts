@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import * as repository from "@/lib/tasks/repository";
 import * as service from "@/lib/tasks/service";
+import { taskInput } from "../support/tasks";
 
 /** Inserts `count` tasks straight into the database. */
 function seed(count: number) {
-  for (let i = 1; i <= count; i++) repository.insertTask({ title: `Task ${i}`, description: "" });
+  for (let i = 1; i <= count; i++) repository.insertTask(taskInput({ title: `Task ${i}`, description: "" }));
 }
 
 describe("tasks service", () => {
@@ -82,8 +83,8 @@ describe("tasks service", () => {
     });
 
     it("filters by the trimmed search term", () => {
-      repository.insertTask({ title: "Buy milk", description: "" });
-      repository.insertTask({ title: "Call mum", description: "" });
+      repository.insertTask(taskInput({ title: "Buy milk", description: "" }));
+      repository.insertTask(taskInput({ title: "Call mum", description: "" }));
 
       const page = service.listTasks({ search: "  milk " });
       expect(page.total).toBe(1);
@@ -106,11 +107,60 @@ describe("tasks service", () => {
       });
       expect(repository.countTasks()).toBe(0);
     });
+
+    it("gives a task without a priority or due date priority 3 and no due date", () => {
+      expect(service.createTask({ title: "Buy milk" })).toMatchObject({
+        ok: true,
+        task: { priority: 3, dueDate: null },
+      });
+    });
+
+    it("stores the given priority and due date", () => {
+      expect(service.createTask({ title: "Book flights", priority: 1, dueDate: "2026-12-24" })).toMatchObject({
+        ok: true,
+        task: { priority: 1, dueDate: "2026-12-24" },
+      });
+    });
   });
 
   describe("updateTask", () => {
+    it("keeps the priority and due date when they are left out", () => {
+      const task = repository.insertTask(taskInput({ priority: 1, dueDate: "2026-12-24" }));
+
+      expect(service.updateTask(task.id, { title: "Book trains" })).toMatchObject({
+        ok: true,
+        task: { title: "Book trains", priority: 1, dueDate: "2026-12-24" },
+      });
+    });
+
+    it("changes the priority and due date, and removes the due date when it is null", () => {
+      const task = repository.insertTask(taskInput());
+
+      expect(service.updateTask(task.id, { priority: 2, dueDate: "2027-01-15" })).toMatchObject({
+        ok: true,
+        task: { priority: 2, dueDate: "2027-01-15" },
+      });
+      expect(service.updateTask(task.id, { dueDate: null })).toMatchObject({
+        ok: true,
+        task: { priority: 2, dueDate: null },
+      });
+    });
+
+    it("leaves the task unchanged when the priority or due date is invalid", () => {
+      const task = repository.insertTask(taskInput({ priority: 1, dueDate: "2026-12-24" }));
+
+      expect(service.updateTask(task.id, { priority: 9, dueDate: "soon" })).toEqual({
+        ok: false,
+        errors: {
+          priority: "Priority must be 1, 2, 3 or 4.",
+          dueDate: "Due date must be a valid date (YYYY-MM-DD).",
+        },
+      });
+      expect(repository.findTaskById(task.id)).toEqual(task);
+    });
+
     it("keeps the fields that are left out", () => {
-      const task = repository.insertTask({ title: "Buy milk", description: "2 litres" });
+      const task = repository.insertTask(taskInput({ title: "Buy milk", description: "2 litres" }));
 
       expect(service.updateTask(task.id, { title: "Buy oat milk" })).toMatchObject({
         ok: true,
@@ -123,7 +173,7 @@ describe("tasks service", () => {
     });
 
     it("leaves the task unchanged when the input is invalid", () => {
-      const task = repository.insertTask({ title: "Buy milk", description: "" });
+      const task = repository.insertTask(taskInput({ title: "Buy milk", description: "" }));
 
       expect(service.updateTask(task.id, { title: "  " })).toEqual({
         ok: false,
@@ -139,7 +189,7 @@ describe("tasks service", () => {
 
   describe("deleteTask", () => {
     it("reports whether a task was deleted", () => {
-      const task = repository.insertTask({ title: "Buy milk", description: "" });
+      const task = repository.insertTask(taskInput({ title: "Buy milk", description: "" }));
 
       expect(service.deleteTask(task.id)).toBe(true);
       expect(service.deleteTask(task.id)).toBe(false);

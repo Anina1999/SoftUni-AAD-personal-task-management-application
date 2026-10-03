@@ -27,7 +27,12 @@ describe("Editing a task", () => {
 
     cy.wait("@updateTask")
       .its("request.body")
-      .should("deep.equal", { title: "Buy oat milk", description: "2 litres, semi-skimmed" });
+      .should("deep.equal", {
+        title: "Buy oat milk",
+        description: "2 litres, semi-skimmed",
+        priority: 3,
+        dueDate: null,
+      });
     cy.get("dialog").should("not.exist");
     cy.get('[role="status"]').should("contain", "Saved “Buy oat milk”.");
     cy.get("@router.refresh").should("have.been.calledOnce");
@@ -84,6 +89,80 @@ describe("Editing a task", () => {
 
     cy.get("dialog").should("not.exist");
     cy.get("article h3").should("have.text", "Buy milk");
+    cy.get("@router.refresh").should("not.have.been.called");
+  });
+});
+
+describe("Editing a task's priority and due date", () => {
+  const planned = buildTask({ id: 8, title: "Book flights", description: "", priority: 1, dueDate: "2026-12-24" });
+
+  beforeEach(() => {
+    cy.mount(<TaskCard task={planned} />);
+    cy.get('button[aria-label="Edit “Book flights”"]').click();
+  });
+
+  it("opens the form pre-filled with the task's priority and due date", () => {
+    cy.get("#task-priority").should("have.value", "1");
+    cy.get("#task-due-date").should("have.value", "2026-12-24");
+    cy.contains("button", "Clear due date").should("be.visible");
+  });
+
+  it("keeps the priority and due date when only the title changes", () => {
+    stubUpdateTask(planned.id, { statusCode: 200, body: { ...planned, title: "Book trains" } });
+
+    cy.get("#task-title").clear().type("Book trains");
+    cy.contains("button", "Save changes").click();
+
+    cy.wait("@updateTask")
+      .its("request.body")
+      .should("deep.equal", { title: "Book trains", description: "", priority: 1, dueDate: "2026-12-24" });
+  });
+
+  it("saves a new priority and due date", () => {
+    stubUpdateTask(planned.id, {
+      statusCode: 200,
+      body: { ...planned, priority: 4, dueDate: "2027-01-15", updatedAt: "2026-10-02T10:30:00.000Z" },
+    });
+
+    cy.get("#task-priority").select("4 · Low");
+    cy.get("#task-due-date").clear().type("2027-01-15");
+    cy.contains("button", "Save changes").click();
+
+    cy.wait("@updateTask")
+      .its("request.body")
+      .should("deep.equal", { title: "Book flights", description: "", priority: 4, dueDate: "2027-01-15" });
+    cy.get("dialog").should("not.exist");
+    cy.get('[role="status"]').should("contain", "Saved “Book flights”.");
+    cy.get("@router.refresh").should("have.been.calledOnce");
+  });
+
+  it("removes the due date", () => {
+    stubUpdateTask(planned.id, { statusCode: 200, body: { ...planned, dueDate: null } });
+
+    cy.contains("button", "Clear due date").click();
+    cy.get("#task-due-date").should("have.value", "");
+    cy.contains("button", "Save changes").click();
+
+    cy.wait("@updateTask")
+      .its("request.body")
+      .should("deep.equal", { title: "Book flights", description: "", priority: 1, dueDate: null });
+    cy.get("dialog").should("not.exist");
+  });
+
+  it("shows the API's due date error and keeps the edits", () => {
+    stubUpdateTask(
+      planned.id,
+      apiError(400, "The task is not valid.", { dueDate: "Due date must be a valid date (YYYY-MM-DD)." }),
+    );
+
+    cy.get("#task-priority").select("2 · High");
+    cy.get("#task-due-date").clear().type("2027-02-01");
+    cy.contains("button", "Save changes").click();
+
+    cy.wait("@updateTask");
+    cy.get("#task-due-date-error").should("have.text", "Due date must be a valid date (YYYY-MM-DD).");
+    cy.get("#task-priority").should("have.value", "2");
+    cy.get("#task-due-date").should("have.value", "2027-02-01");
     cy.get("@router.refresh").should("not.have.been.called");
   });
 });
