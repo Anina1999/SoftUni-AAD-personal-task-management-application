@@ -15,7 +15,7 @@ export function TaskDescription({ text }: { text: string }) {
   const [expanded, setExpanded] = useState(false);
 
   if (!text) {
-    return <p className={`${styles.description} ${styles.placeholder}`}>No description</p>;
+    return null;
   }
 
   const isLong = text.length > LONG_TEXT_CHARS || text.split("\n").length > LONG_TEXT_LINES;

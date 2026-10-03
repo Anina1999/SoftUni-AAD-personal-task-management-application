@@ -1,62 +1,51 @@
-.cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: var(--space-4);
-}
-
-.statCard,
-.actionCard {
+.header {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-5);
 }
 
-.actionCard > :global(.btn) {
-  align-self: flex-start;
-  margin-top: auto;
-}
-
-.cardLabel {
-  font-size: 0.95rem;
+.eyebrow {
+  margin-bottom: var(--space-1);
+  font-size: 0.85rem;
   font-weight: 600;
+  color: var(--color-primary);
+}
+
+.subtitle {
+  margin-top: var(--space-1);
   color: var(--color-text-muted);
 }
 
-.statValue {
-  font-size: 2.75rem;
-  font-weight: 700;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
+.searchCard {
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 
-.cardLink {
-  margin-top: auto;
+/* The card already provides the spacing around the search form. */
+.searchCard form {
+  margin-bottom: 0;
+}
+
+.summary {
+  margin-bottom: var(--space-3);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.more {
+  margin-top: var(--space-4);
+  text-align: center;
+}
+
+.link {
   font-weight: 600;
   text-decoration: none;
 }
 
-.cardLink:hover {
+.link:hover {
   text-decoration: underline;
-}
-
-.recent {
-  margin-top: var(--space-6);
-}
-
-.sectionHeader {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin-bottom: var(--space-3);
-}
-
-.sectionTitle {
-  font-size: 1.2rem;
-}
-
-@media (max-width: 480px) {
-  .actionCard > :global(.btn) {
-    align-self: stretch;
-  }
 }

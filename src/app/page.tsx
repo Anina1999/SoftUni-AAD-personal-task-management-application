@@ -1,75 +1,97 @@
 /**
- * Home page (`/`): overview cards (task count, quick "add task") and the
- * most recently created tasks. Creating, editing, and deleting happen in
- * dialogs on this page; Server Actions revalidate it, so the count and the
- * recent list update immediately.
+ * Home page (`/?q=<search>`): the everyday workspace.
+ *
+ * Everything needed day to day is on this one page: a "New task" button,
+ * live search, and the newest matching tasks with Edit/Delete, which open
+ * dialogs. It mirrors the Tasks page partially: it shows the first
+ * `HOME_LIST_SIZE` matches and links to the Tasks page for the full,
+ * paginated list.
  */
 import Link from "next/link";
-import { connection } from "next/server";
 import { NewTaskButton } from "@/components/tasks/NewTaskButton";
+import { SearchBar } from "@/components/tasks/SearchBar";
 import { TaskCard } from "@/components/tasks/TaskCard";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { countTasks, listRecentTasks } from "@/lib/tasks/service";
+import { countTasks, listTasks, normaliseSearch } from "@/lib/tasks/service";
 import styles from "./home.module.css";
 
-const RECENT_TASKS_LIMIT = 5;
+const HOME_LIST_SIZE = 10;
 
-export default async function HomePage() {
-  // Always render with fresh data (opt out of build-time prerendering).
-  await connection();
+export default async function HomePage(props: PageProps<"/">) {
+  const searchParams = await props.searchParams;
+  const query = normaliseSearch(searchParams.q);
 
-  const total = countTasks();
-  const recent = listRecentTasks(RECENT_TASKS_LIMIT);
+  const result = listTasks({ search: query, pageSize: HOME_LIST_SIZE });
+  const total = query ? countTasks() : result.total;
+  const tasksPageHref = query ? `/tasks?${new URLSearchParams({ q: query })}` : "/tasks";
+  const hasMore = result.total > result.items.length;
 
   return (
     <>
-      <div className="page-header">
-        <h1 className="page-title">Home</h1>
+      <div className={styles.header}>
+        <div>
+          <p className={styles.eyebrow}>Your day, organised</p>
+          <h1 className="page-title">Your tasks</h1>
+          <p className={styles.subtitle}>A clear space for everything you need to do.</p>
+        </div>
+        <NewTaskButton />
       </div>
 
-      <section className={styles.cards} aria-label="Overview">
-        <div className={`card ${styles.statCard}`}>
-          <h2 className={styles.cardLabel}>Total tasks</h2>
-          <p className={styles.statValue}>{total.toLocaleString("en-GB")}</p>
-          <Link href="/tasks" className={styles.cardLink}>
-            View all tasks <span aria-hidden="true">→</span>
-          </Link>
-        </div>
+      {total === 0 ? (
+        <EmptyState
+          title="No tasks yet"
+          description="Create your first task to get started."
+          action={<NewTaskButton label="Create a task" />}
+        />
+      ) : (
+        <>
+          <div className={`card ${styles.searchCard}`}>
+            <SearchBar query={query} basePath="/" showLabel />
+          </div>
 
-        <div className={`card ${styles.actionCard}`}>
-          <h2 className={styles.cardLabel}>Add a new task</h2>
-          <p className="muted">Capture something you need to do. It takes a few seconds.</p>
-          <NewTaskButton label="Add task" />
-        </div>
-      </section>
+          <section aria-labelledby="home-tasks-heading">
+            <h2 id="home-tasks-heading" className="visually-hidden">
+              {query ? "Search results" : "Tasks"}
+            </h2>
 
-      <section className={styles.recent} aria-labelledby="recent-heading">
-        <div className={styles.sectionHeader}>
-          <h2 id="recent-heading" className={styles.sectionTitle}>
-            Recent tasks
-          </h2>
-          {total > RECENT_TASKS_LIMIT && (
-            <Link href="/tasks" className={styles.cardLink}>
-              See all
-            </Link>
-          )}
-        </div>
+            {result.total === 0 ? (
+              <EmptyState
+                title={`No tasks match “${query}”`}
+                description="Try a different search term."
+                action={
+                  <Link href="/" className="btn btn-secondary">
+                    Clear search
+                  </Link>
+                }
+              />
+            ) : (
+              <>
+                <p className={styles.summary} aria-live="polite">
+                  {hasMore && <>Showing {result.items.length} of </>}
+                  {result.total} {result.total === 1 ? "task" : "tasks"}
+                  {query && <> matching “{query}”</>} · Newest first
+                </p>
 
-        {recent.length === 0 ? (
-          <EmptyState
-            title="No tasks yet"
-            description="Use “Add task” above to create your first one."
-          />
-        ) : (
-          <ul className="task-list">
-            {recent.map((task) => (
-              <li key={task.id}>
-                <TaskCard task={task} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                <ul className="task-list">
+                  {result.items.map((task) => (
+                    <li key={task.id}>
+                      <TaskCard task={task} />
+                    </li>
+                  ))}
+                </ul>
+
+                {hasMore && (
+                  <p className={styles.more}>
+                    <Link href={tasksPageHref} className={styles.link}>
+                      See all {result.total} in Tasks <span aria-hidden="true">→</span>
+                    </Link>
+                  </p>
+                )}
+              </>
+            )}
+          </section>
+        </>
+      )}
     </>
   );
 }

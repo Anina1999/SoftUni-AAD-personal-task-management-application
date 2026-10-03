@@ -1,10 +1,10 @@
 /**
  * Tasks service: business rules for the tasks module.
  *
- * This is the API that pages and Server Actions use. It validates input,
- * handles pagination math and id parsing, and delegates storage to the
- * repository. It has no dependency on Next.js, so future entry points
- * (e.g. `/api/*` route handlers or scripts) can reuse it unchanged.
+ * This is the API that pages and the `/api/tasks` route handlers use. It
+ * validates input, handles pagination math and id parsing, and delegates
+ * storage to the repository. It has no dependency on Next.js, so other entry
+ * points (e.g. scripts) can reuse it unchanged.
  */
 import "server-only";
 import * as repository from "./repository";
@@ -13,6 +13,9 @@ import { validateTaskInput } from "./validation";
 
 /** Number of tasks shown per list page. */
 export const PAGE_SIZE = 20;
+
+/** Largest page size a caller (e.g. an API client) may request. */
+export const MAX_PAGE_SIZE = 100;
 
 /** Search terms longer than this are truncated (keeps queries cheap). */
 const MAX_SEARCH_LENGTH = 200;
@@ -42,31 +45,34 @@ export function normaliseSearch(raw: unknown): string {
  *
  * @param options.search - Optional search term (matched in title/description).
  * @param options.page - Requested 1-based page; out-of-range values are clamped.
+ * @param options.pageSize - Tasks per page (default `PAGE_SIZE`), clamped to 1..`MAX_PAGE_SIZE`.
  */
-export function listTasks(options: { search?: string; page?: number }): Page<Task> {
+export function listTasks(options: {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}): Page<Task> {
   const search = normaliseSearch(options.search);
+  const pageSize = Number.isInteger(options.pageSize)
+    ? Math.min(Math.max(1, options.pageSize!), MAX_PAGE_SIZE)
+    : PAGE_SIZE;
   const total = repository.countTasks(search);
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const requested = Number.isInteger(options.page) ? options.page! : 1;
   const page = Math.min(Math.max(1, requested), totalPages);
 
   const items = repository.findTasks({
     search,
-    limit: PAGE_SIZE,
-    offset: (page - 1) * PAGE_SIZE,
+    limit: pageSize,
+    offset: (page - 1) * pageSize,
   });
 
-  return { items, total, page, pageSize: PAGE_SIZE, totalPages };
+  return { items, total, page, pageSize, totalPages };
 }
 
 /** Returns the total number of tasks. */
 export function countTasks(): number {
   return repository.countTasks();
-}
-
-/** Returns the most recently created tasks (newest first). */
-export function listRecentTasks(limit = 5): Task[] {
-  return repository.findTasks({ limit, offset: 0 });
 }
 
 /** Returns a task by id, or `undefined` if it doesn't exist. */
@@ -82,14 +88,22 @@ export function createTask(raw: { title?: unknown; description?: unknown }): Mut
 }
 
 /**
- * Validates and updates a task.
+ * Validates and updates a task. Fields that are left out (`undefined`) keep
+ * their current value, so callers can send only what changed.
  * @returns `undefined` if the task doesn't exist, otherwise the mutation result.
  */
 export function updateTask(
   id: number,
   raw: { title?: unknown; description?: unknown },
 ): MutationResult | undefined {
-  const result = validateTaskInput(raw);
+  // better-sqlite3 is synchronous, so no other write can run between this
+  // read and the update below.
+  const existing = repository.findTaskById(id);
+  if (!existing) return undefined;
+  const result = validateTaskInput({
+    title: raw.title === undefined ? existing.title : raw.title,
+    description: raw.description === undefined ? existing.description : raw.description,
+  });
   if (!result.ok) return result;
   const task = repository.updateTask(id, result.value);
   return task ? { ok: true, task } : undefined;

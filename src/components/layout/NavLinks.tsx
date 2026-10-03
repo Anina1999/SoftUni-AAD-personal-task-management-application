@@ -3,18 +3,16 @@
 /**
  * Main navigation links. Highlights the current section and marks it with
  * `aria-current="page"`. New sections are added by extending `NAV_ITEMS`.
+ * Home has no link here: the logo in the header already leads to it.
  */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./SiteHeader.module.css";
 
-const NAV_ITEMS = [
-  { href: "/", label: "Home" },
-  { href: "/tasks", label: "Tasks" },
-] as const;
+const NAV_ITEMS = [{ href: "/tasks", label: "Tasks" }] as const;
 
 function isActive(pathname: string, href: string): boolean {
-  return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export function NavLinks() {

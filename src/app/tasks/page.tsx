@@ -43,7 +43,7 @@ export default async function TasksPage(props: PageProps<"/tasks">) {
         <NewTaskButton />
       </div>
 
-      <SearchBar query={query} />
+      <SearchBar query={query} basePath="/tasks" />
 
       {result.total === 0 ? (
         query ? (

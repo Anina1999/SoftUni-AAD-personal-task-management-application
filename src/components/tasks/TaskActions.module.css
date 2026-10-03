@@ -9,12 +9,17 @@
   font-size: 0.9rem;
 }
 
+/* Quiet until hovered, so the destructive action doesn't draw the eye. */
 .danger {
-  color: var(--color-danger);
+  border-color: transparent;
+  background: transparent;
+  color: var(--color-text-muted);
 }
 
 .danger:hover:not(:disabled) {
+  color: var(--color-danger);
   border-color: var(--color-danger);
+  background: transparent;
 }
 
 /* Bigger touch targets on phones. */
