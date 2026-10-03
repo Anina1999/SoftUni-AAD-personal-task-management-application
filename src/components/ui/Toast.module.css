@@ -1,0 +1,62 @@
+.region {
+  position: fixed;
+  inset: auto var(--gutter) var(--gutter) auto;
+  z-index: 100;
+  display: flex;
+  justify-content: flex-end;
+  max-width: calc(100vw - 2 * var(--gutter));
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+  pointer-events: auto;
+  animation: slide-in 160ms ease-out;
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
+
+.dismiss {
+  min-width: 32px;
+  min-height: 32px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.dismiss:hover {
+  background: rgb(0 0 0 / 8%);
+}
+
+@media (max-width: 480px) {
+  .region {
+    inset: auto var(--gutter) var(--gutter) var(--gutter);
+  }
+  .toast {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
