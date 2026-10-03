@@ -75,11 +75,6 @@ export function countTasks(): number {
   return repository.countTasks();
 }
 
-/** Returns the most recently created tasks (newest first). */
-export function listRecentTasks(limit = 5): Task[] {
-  return repository.findTasks({ limit, offset: 0 });
-}
-
 /** Returns a task by id, or `undefined` if it doesn't exist. */
 export function getTask(id: number): Task | undefined {
   return repository.findTaskById(id);
