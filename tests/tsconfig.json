@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["cypress", "node"],
+    "incremental": false
+  },
+  "include": ["**/*.ts", "**/*.tsx", "../cypress.config.ts", "../next-env.d.ts"],
+  "exclude": [".artifacts"]
+}
