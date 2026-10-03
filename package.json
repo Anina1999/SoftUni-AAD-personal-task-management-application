@@ -11,8 +11,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "next typegen && tsc --noEmit",
-    "seed": "node scripts/seed.mjs"
+    "typecheck": "next typegen && tsc --noEmit && tsc --noEmit -p tests",
+    "seed": "node scripts/seed.mjs",
+    "test": "npm run test:unit && npm run test:component",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:component": "cypress run --component",
+    "test:component:open": "cypress open --component"
   },
   "dependencies": {
     "@next/env": "^16.3.8",
@@ -27,8 +32,12 @@
     "@types/node": "^26.6.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "cypress": "^16.1.1",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.3.8",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
   }
 }
