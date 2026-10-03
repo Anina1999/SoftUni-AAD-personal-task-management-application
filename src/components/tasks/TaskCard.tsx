@@ -13,19 +13,19 @@ export function TaskCard({ task }: { task: Task }) {
 
   return (
     <article className={styles.card} aria-labelledby={`task-${task.id}-title`}>
-      <h3 id={`task-${task.id}-title`} className={styles.title}>
-        {task.title}
-      </h3>
-      <TaskDescription text={task.description} />
-      <div className={styles.footer}>
+      <div className={styles.body}>
+        <h3 id={`task-${task.id}-title`} className={styles.title}>
+          {task.title}
+        </h3>
+        <TaskDescription text={task.description} />
         <p className={styles.meta}>
           {wasEdited ? "Updated " : "Created "}
           <time dateTime={wasEdited ? task.updatedAt : task.createdAt}>
             {formatDateTime(wasEdited ? task.updatedAt : task.createdAt)}
           </time>
         </p>
-        <TaskActions task={task} />
       </div>
+      <TaskActions task={task} />
     </article>
   );
 }
