@@ -29,7 +29,9 @@ Open <http://localhost:3000>. The database file `data/tasks.db` is created autom
 | `npm run build` | Create a production build |
 | `npm start` | Run the production build |
 | `npm run lint` | Run ESLint |
-| `npm run typecheck` | Generate route types and run the TypeScript compiler |
+| `npm run typecheck` | Generate route types and run the TypeScript compiler (app and tests) |
+| `npm run test:component` | Run the Cypress component tests headlessly |
+| `npm run test:component:open` | Open Cypress to run and debug component tests interactively |
 | `npm run seed [-- <count>]` | Insert sample tasks for performance testing (default: 10,000). Start the app once first so the schema exists |
 
 ## Configuration
@@ -153,6 +155,26 @@ For example, *projects*:
 4. Add a link to `NAV_ITEMS` in `src/components/layout/NavLinks.tsx`.
 
 To add a field to tasks (for example a due date): add a migration with `ALTER TABLE tasks ADD COLUMN ...` and a default value, then update `types.ts`, `validation.ts`, the repository columns, and `TaskForm`.
+
+---
+
+## Testing
+
+The task dialogs (create, edit, delete) are covered by **Cypress component tests** in `tests/`. Each test mounts a component on its own, with no server, database or shared data, so tests can run in any order or one at a time.
+
+```
+tests/
+  component/tasks/       create-task, edit-task, delete-task specs
+  support/
+    component.tsx        cy.mount (toast provider + stubbed router), unstubbed-request guard
+    api.ts               stubTask* helpers for /api/tasks, buildTask, apiError, heldResponse
+    next-navigation.tsx  test double for next/navigation
+```
+
+- **API calls are stubbed** with `cy.intercept` (`stubCreateTask`, `stubUpdateTask`, `stubDeleteTask`). The real `api-client.ts` still runs, so request bodies, headers and error handling are tested too. A request a test hasn't stubbed fails that test.
+- **Router:** `next/navigation` is swapped for a test double whose methods are Cypress stubs, e.g. `cy.get("@router.refresh").should("have.been.calledOnce")`.
+- **Pending states** use `heldResponse()`, which holds a response until the test releases it, so no timing-based delays are needed.
+- **Speed:** components are bundled with Vite rather than Next.js (`cypress.config.ts`), `cypress run` reuses a single browser tab, and video recording is off. Screenshots of failures go to `tests/.artifacts/` (git-ignored).
 
 ---
 
