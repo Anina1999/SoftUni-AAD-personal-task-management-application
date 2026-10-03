@@ -1,0 +1,21 @@
+.search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.input {
+  flex: 1 1 240px;
+  min-height: 44px;
+}
+
+@media (max-width: 480px) {
+  .search > :not(.input) {
+    flex: 1 1 auto;
+  }
+}
+
+.clear {
+  font-weight: 500;
+}
