@@ -184,6 +184,42 @@ describe("tasks service", () => {
 
     it("returns undefined for a task that doesn't exist", () => {
       expect(service.updateTask(999, { title: "x" })).toBeUndefined();
+      expect(service.updateTask(999, { completed: true })).toBeUndefined();
+    });
+
+    it("marks a task as completed and reopens it, keeping its other fields", () => {
+      const task = repository.insertTask(taskInput({ title: "Buy milk", priority: 1 }));
+
+      const completed = service.updateTask(task.id, { completed: true });
+      expect(completed).toEqual({ ok: true, task: { ...task, completedAt: expect.any(String) } });
+
+      expect(service.updateTask(task.id, { completed: false })).toEqual({ ok: true, task });
+    });
+
+    it("changes the content and the completion state together", () => {
+      const task = repository.insertTask(taskInput({ title: "Buy milk" }));
+
+      expect(service.updateTask(task.id, { title: "Buy oat milk", completed: true })).toMatchObject({
+        ok: true,
+        task: { title: "Buy oat milk", completedAt: expect.any(String) },
+      });
+    });
+
+    it.each(["yes", 1, null])("rejects completed: %j and leaves the task unchanged", (completed) => {
+      const task = repository.insertTask(taskInput());
+
+      expect(service.updateTask(task.id, { title: "Changed", completed })).toEqual({
+        ok: false,
+        errors: { completed: "Completed must be true or false." },
+      });
+      expect(repository.findTaskById(task.id)).toEqual(task);
+    });
+
+    it("doesn't complete the task when the other fields are invalid", () => {
+      const task = repository.insertTask(taskInput());
+
+      expect(service.updateTask(task.id, { title: " ", completed: true })).toMatchObject({ ok: false });
+      expect(repository.findTaskById(task.id)).toEqual(task);
     });
   });
 

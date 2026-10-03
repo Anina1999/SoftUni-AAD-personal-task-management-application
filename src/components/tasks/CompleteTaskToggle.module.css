@@ -1,0 +1,63 @@
+/* Outline circle while open; filled green with a white tick once completed. */
+.toggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: -6px 0 -6px -6px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.circle,
+.tick {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: fill 150ms ease, stroke 150ms ease, opacity 150ms ease;
+}
+
+.tick {
+  stroke-width: 2.25;
+  opacity: 0.45;
+}
+
+.toggle:hover .circle,
+.toggle:hover .tick {
+  stroke: var(--color-success);
+}
+
+.toggle:hover .tick {
+  opacity: 1;
+}
+
+.toggle[aria-pressed="true"] .circle {
+  fill: var(--color-success);
+  stroke: var(--color-success);
+}
+
+.toggle[aria-pressed="true"] .tick {
+  stroke: var(--color-success-contrast);
+  opacity: 1;
+}
+
+.toggle[aria-busy="true"] {
+  cursor: progress;
+}
+
+/* Bigger touch target on phones. */
+@media (pointer: coarse) {
+  .toggle {
+    width: 44px;
+    height: 44px;
+    margin: -10px 0 -10px -10px;
+  }
+}

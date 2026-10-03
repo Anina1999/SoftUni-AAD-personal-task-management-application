@@ -1,7 +1,7 @@
 # Personal Task Manager
 
 A personal task management web app built with **Next.js** (App Router) and **SQLite**.
-You can create, edit, delete, and search tasks. A task has a title and, optionally, a description, a priority (1 to 4, where 1 is the most important; 3 by default) and a due date.
+You can create, edit, delete, search, and complete tasks. A task has a title and, optionally, a description, a priority (1 to 4, where 1 is the most important; 3 by default) and a due date.
 
 The app has two pages, **Home** and **Tasks**, each with its own URL and rendered on the server. **Home** is the everyday workspace: you can list, search, create, edit, and delete tasks there without leaving the page. **Tasks** is the full, paginated list. Creating, editing, and deleting happen inline or in **dialogs on the current page**, which call a small **JSON API** (`/api/tasks`) that exposes every CRUD operation.
 
@@ -71,10 +71,10 @@ All responses are JSON. Errors have the shape `{ "error": "message", "errors": {
 | `GET /api/tasks?q=&page=&pageSize=` | | `200` `{ items, total, page, pageSize, totalPages }` | |
 | `POST /api/tasks` | `{ "title": "…", "description": "…", "priority": 1, "dueDate": "2026-12-24" }` (only `title` is required) | `201` task + `Location` header | `400`, `415` |
 | `GET /api/tasks/:id` | | `200` task | `404` |
-| `PATCH /api/tasks/:id` | any of `title`, `description`, `priority`, `dueDate` (`null` removes the due date) | `200` task | `400`, `404`, `415` |
+| `PATCH /api/tasks/:id` | any of `title`, `description`, `priority`, `dueDate` (`null` removes the due date), `completed` (`true`/`false`) | `200` task | `400`, `404`, `415` |
 | `DELETE /api/tasks/:id` | | `204` | `404` |
 
-`priority` is a whole number from 1 (most important) to 4 and defaults to 3. `dueDate` is a calendar date written as `YYYY-MM-DD`, or `null` for none (the default). `pageSize` defaults to 20 (max 100). Write requests must use `Content-Type: application/json`, which also protects against cross-site form posts.
+`priority` is a whole number from 1 (most important) to 4 and defaults to 3. `dueDate` is a calendar date written as `YYYY-MM-DD`, or `null` for none (the default). `completed: true` marks a task as completed (its `completedAt` is set to the current time) and `false` reopens it; changing only `completed` doesn't change `updatedAt`. `pageSize` defaults to 20 (max 100). Write requests must use `Content-Type: application/json`, which also protects against cross-site form posts.
 
 ```bash
 curl -X POST http://localhost:3000/api/tasks \

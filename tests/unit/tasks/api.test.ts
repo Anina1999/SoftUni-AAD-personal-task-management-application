@@ -201,6 +201,29 @@ describe("PATCH /api/tasks/:id", () => {
     expect(repository.findTaskById(task.id)).toEqual(task);
   });
 
+  it("marks the task as completed and reopens it", async () => {
+    const task = repository.insertTask(taskInput({ title: "Buy milk" }));
+
+    const completed = await patchTask(String(task.id), { completed: true });
+    expect(completed.status).toBe(200);
+    expect(await completed.json()).toMatchObject({ title: "Buy milk", completedAt: expect.any(String) });
+
+    const reopened = await patchTask(String(task.id), { completed: false });
+    expect(await reopened.json()).toEqual(task);
+  });
+
+  it("rejects a completed value that isn't a boolean with 400", async () => {
+    const task = repository.insertTask(taskInput());
+
+    const response = await patchTask(String(task.id), { completed: "yes" });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: "The task is not valid.",
+      errors: { completed: "Completed must be true or false." },
+    });
+  });
+
   it.each(["999", "abc"])("answers 404 for id %j", async (id) => {
     const response = await patchTask(id, { title: "x" });
 
