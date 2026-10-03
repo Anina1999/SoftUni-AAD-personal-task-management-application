@@ -34,13 +34,13 @@
 }
 
 .link:hover {
-  background: var(--color-surface-muted);
+  background: var(--color-primary-soft);
 }
 
 .current,
 .current:hover {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+  background: var(--gradient-primary);
+  border-color: transparent;
   color: var(--color-primary-contrast);
 }
 

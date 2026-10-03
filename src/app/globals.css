@@ -5,28 +5,50 @@
  */
 
 /* ---------- Design tokens ---------- */
+/* Warm palette: blush-rose and soft-pumpkin backgrounds, cream surfaces,
+ * cocoa text and a burnt-pumpkin primary. All text pairs meet WCAG AA. */
 :root {
   color-scheme: light;
 
-  --color-bg: #f6f7f9;
-  --color-surface: #ffffff;
-  --color-surface-muted: #f0f2f5;
-  --color-text: #1b1f24;
-  --color-text-muted: #5b6573;
-  --color-border: #dde1e6;
-  --color-primary: #3451d1;
-  --color-primary-hover: #2a43b3;
+  --color-bg: #fdf1ea;
+  --color-bg-glow-1: #fcdbe2; /* rose, top left */
+  --color-bg-glow-2: #fde0c6; /* pumpkin, top right */
+  --color-surface: #fffaf6;
+  --color-surface-muted: #fbebe3;
+  --color-header-bg: rgb(255 248 243 / 82%);
+  --color-text: #3b2424;
+  --color-text-muted: #7a5650;
+  --color-border: #f1d8cc;
+  --color-border-strong: #e8bfae;
+  --color-primary: #b8461f;
+  --color-primary-hover: #9c3a17;
   --color-primary-contrast: #ffffff;
-  --color-danger: #c92a2a;
-  --color-danger-hover: #a61e1e;
-  --color-success-bg: #e7f6ec;
-  --color-success-text: #1e6b3a;
-  --color-focus: #6b84ff;
-  --color-skeleton: #e6e9ee;
+  --color-primary-soft: #ffece1;
+  --color-primary-light: #d9622f;
+  --color-accent: #ad3456;
+  --color-danger: #b42318;
+  --color-danger-hover: #912018;
+  --color-danger-contrast: #ffffff;
+  --color-danger-soft: #fdeae7;
+  --color-danger-border: #f2b8b0;
+  --color-success-bg: #e8f4e6;
+  --color-success-text: #2f6b2a;
+  --color-success: #2e8540;
+  --color-success-contrast: #ffffff;
+  --color-focus: #d9486e;
+  --color-skeleton: #f5e0d6;
+  --color-backdrop: rgb(59 30 28 / 45%);
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --shadow-card: 0 1px 2px rgb(16 24 40 / 6%), 0 1px 3px rgb(16 24 40 / 8%);
+  /* Rose → pumpkin; both ends keep white text above 4.5:1. */
+  --gradient-primary: linear-gradient(135deg, #bf3a5e, #b8461f);
+  --gradient-primary-hover: linear-gradient(135deg, #a3304f, #9c3a17);
+  --gradient-brand: linear-gradient(135deg, #e0607e, #f0894a);
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --shadow-card: 0 1px 2px rgb(120 60 40 / 6%), 0 4px 14px rgb(190 100 70 / 8%);
+  --shadow-card-hover: 0 2px 4px rgb(120 60 40 / 8%), 0 8px 24px rgb(190 100 70 / 14%);
+  --shadow-modal: 0 24px 60px rgb(90 40 30 / 28%);
 
   --space-1: 4px;
   --space-2: 8px;
@@ -46,22 +68,42 @@
   :root {
     color-scheme: dark;
 
-    --color-bg: #111418;
-    --color-surface: #1a1e24;
-    --color-surface-muted: #222831;
-    --color-text: #e8eaed;
-    --color-text-muted: #a0a8b4;
-    --color-border: #2f3640;
-    --color-primary: #7b93ff;
-    --color-primary-hover: #97a9ff;
-    --color-primary-contrast: #0d1020;
-    --color-danger: #ff6b6b;
-    --color-danger-hover: #ff8787;
-    --color-success-bg: #163222;
-    --color-success-text: #8fe0aa;
-    --color-focus: #9fb1ff;
-    --color-skeleton: #262c35;
+    --color-bg: #1b1315;
+    --color-bg-glow-1: rgb(150 50 80 / 22%);
+    --color-bg-glow-2: rgb(170 85 35 / 18%);
+    --color-surface: #271c1e;
+    --color-surface-muted: #33252a;
+    --color-header-bg: rgb(39 28 30 / 85%);
+    --color-text: #f6e9e3;
+    --color-text-muted: #c9aea6;
+    --color-border: #43302f;
+    --color-border-strong: #5c4140;
+    --color-primary: #ff9e6e;
+    --color-primary-hover: #ffb48c;
+    --color-primary-contrast: #2a1207;
+    --color-primary-soft: #3d2620;
+    --color-primary-light: #ffc4a3;
+    --color-accent: #f58aa8;
+    --color-danger: #ff7d7d;
+    --color-danger-hover: #ff9a9a;
+    --color-danger-contrast: #2a1207;
+    --color-danger-soft: #3f2224;
+    --color-danger-border: #6e3535;
+    --color-success-bg: #1d3320;
+    --color-success-text: #a6dd9e;
+    --color-success: #5cbf6a;
+    --color-success-contrast: #10210f;
+    --color-focus: #ffb48c;
+    --color-skeleton: #33262a;
+    --color-backdrop: rgb(10 5 6 / 65%);
+
+    --gradient-primary: linear-gradient(135deg, #f58aa8, #ff9e6e);
+    --gradient-primary-hover: linear-gradient(135deg, #f9a3bb, #ffb48c);
+    --gradient-brand: linear-gradient(135deg, #e0607e, #f0894a);
+
     --shadow-card: none;
+    --shadow-card-hover: 0 6px 20px rgb(0 0 0 / 30%);
+    --shadow-modal: 0 24px 60px rgb(0 0 0 / 50%);
   }
 }
 
@@ -81,7 +123,12 @@ body {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: var(--color-bg);
+  /* Soft rose and pumpkin glows over the warm base colour. */
+  background:
+    radial-gradient(1100px 520px at 0% -8%, var(--color-bg-glow-1), transparent 65%),
+    radial-gradient(900px 480px at 100% 0%, var(--color-bg-glow-2), transparent 65%),
+    var(--color-bg);
+  background-attachment: fixed;
   color: var(--color-text);
   font-family: var(--font-sans);
   font-size: 16px;
@@ -190,7 +237,8 @@ html:has(dialog[open]) {
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 120ms ease, border-color 120ms ease;
+  transition: background-color 120ms ease, border-color 120ms ease,
+    box-shadow 120ms ease;
 }
 
 .btn:disabled,
@@ -200,25 +248,27 @@ html:has(dialog[open]) {
 }
 
 .btn-primary {
-  background: var(--color-primary);
+  background: var(--gradient-primary);
   color: var(--color-primary-contrast);
+  box-shadow: 0 2px 8px rgb(184 70 31 / 22%);
 }
 .btn-primary:hover:not(:disabled) {
-  background: var(--color-primary-hover);
+  background: var(--gradient-primary-hover);
+  box-shadow: 0 4px 14px rgb(184 70 31 / 30%);
 }
 
 .btn-secondary {
   background: var(--color-surface);
   color: var(--color-text);
-  border-color: var(--color-border);
+  border-color: var(--color-border-strong);
 }
 .btn-secondary:hover:not(:disabled) {
-  background: var(--color-surface-muted);
+  background: var(--color-primary-soft);
 }
 
 .btn-danger {
   background: var(--color-danger);
-  color: #fff;
+  color: var(--color-danger-contrast);
 }
 .btn-danger:hover:not(:disabled) {
   background: var(--color-danger-hover);
@@ -250,7 +300,7 @@ html:has(dialog[open]) {
 .field-input {
   width: 100%;
   padding: var(--space-3);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
   background: var(--color-surface);
   color: var(--color-text);

@@ -1,4 +1,4 @@
-/* Content on the left, Edit/Delete on the right; actions wrap below on narrow screens. */
+/* Tick and content on the left, Edit/Delete on the right; actions wrap below on narrow screens. */
 .card {
   display: flex;
   flex-wrap: wrap;
@@ -10,15 +10,30 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
 
   /* Lets the browser skip rendering work for off-screen cards. */
   content-visibility: auto;
   contain-intrinsic-size: auto 90px;
 }
 
-.body {
+.card:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Keeps the completion tick beside the title, even when the actions wrap. */
+.main {
   display: flex;
   flex: 1 1 260px;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.body {
+  display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: var(--space-1);
   min-width: 0;
@@ -54,6 +69,7 @@
 
 .tag[data-priority="2"] {
   border-color: var(--color-primary);
+  background: var(--color-primary-soft);
   color: var(--color-primary);
 }
 
