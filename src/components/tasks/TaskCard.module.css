@@ -10,7 +10,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
 
   /* Lets the browser skip rendering work for off-screen cards. */
   content-visibility: auto;
@@ -20,6 +20,17 @@
 .card:hover {
   border-color: var(--color-border-strong);
   box-shadow: var(--shadow-card-hover);
+}
+
+/* A completed task gets a soft green tint. Keyed off the tick's own state, so
+ * the card turns green the moment the tick is clicked. */
+.card:has([aria-pressed="true"]) {
+  border-color: var(--color-success-border);
+  background: var(--color-success-soft);
+}
+
+.card:has([aria-pressed="true"]):hover {
+  border-color: var(--color-success);
 }
 
 /* Keeps the completion tick beside the title, even when the actions wrap. */

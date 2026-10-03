@@ -38,6 +38,10 @@ export const MIGRATIONS: readonly string[] = [
   ALTER TABLE tasks ADD COLUMN due_date TEXT
     CHECK (due_date IS NULL OR date(due_date) IS due_date);
   `,
+  // v3: completion time (ISO-8601 UTC); NULL means the task is still open.
+  `
+  ALTER TABLE tasks ADD COLUMN completed_at TEXT;
+  `,
 ];
 
 /**

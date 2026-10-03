@@ -2,9 +2,10 @@
  * Single-task endpoint.
  *
  *   GET    /api/tasks/:id                    200 → Task
- *   PATCH  /api/tasks/:id  { title?, description?, priority?, dueDate? }
+ *   PATCH  /api/tasks/:id  { title?, description?, priority?, dueDate?, completed? }
  *                                            200 → Task (omitted fields keep their value;
- *                                                  `dueDate: null` removes the due date)
+ *                                                  `dueDate: null` removes the due date;
+ *                                                  `completed` sets or clears `completedAt`)
  *                                            400 → { error, errors } on invalid input
  *   DELETE /api/tasks/:id                    204
  *

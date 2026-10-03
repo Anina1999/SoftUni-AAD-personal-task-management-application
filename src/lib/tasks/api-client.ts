@@ -49,6 +49,11 @@ export function updateTask(id: number, input: Partial<TaskInput>): Promise<ApiRe
   return request(`/api/tasks/${id}`, { method: "PATCH", body: JSON.stringify(input) });
 }
 
+/** Marks a task as completed, or reopens it. */
+export function setTaskCompleted(id: number, completed: boolean): Promise<ApiResult<Task>> {
+  return request(`/api/tasks/${id}`, { method: "PATCH", body: JSON.stringify({ completed }) });
+}
+
 /** Deletes a task. A 404 means it was already gone. */
 export function deleteTask(id: number): Promise<ApiResult<void>> {
   return request(`/api/tasks/${id}`, { method: "DELETE" });

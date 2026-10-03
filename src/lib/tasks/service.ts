@@ -94,21 +94,39 @@ export function createTask(raw: RawTaskInput): MutationResult {
  * Validates and updates a task. Fields that are left out (`undefined`) keep
  * their current value, so callers can send only what changed. A `null`
  * `dueDate` removes the due date; a `null` `priority` resets it to 3.
+ *
+ * `completed: true` marks the task as completed and `false` reopens it. Sent
+ * on its own, it changes only the completion state, not `updatedAt`.
  * @returns `undefined` if the task doesn't exist, otherwise the mutation result.
  */
-export function updateTask(id: number, raw: RawTaskInput): MutationResult | undefined {
+export function updateTask(
+  id: number,
+  raw: RawTaskInput & { completed?: unknown },
+): MutationResult | undefined {
+  const { completed, ...fields } = raw;
+  if (completed !== undefined && typeof completed !== "boolean") {
+    return { ok: false, errors: { completed: "Completed must be true or false." } };
+  }
+
   // better-sqlite3 is synchronous, so no other write can run between this
-  // read and the update below.
+  // read and the updates below.
   const existing = repository.findTaskById(id);
   if (!existing) return undefined;
-  const result = validateTaskInput({
-    title: raw.title === undefined ? existing.title : raw.title,
-    description: raw.description === undefined ? existing.description : raw.description,
-    priority: raw.priority === undefined ? existing.priority : raw.priority,
-    dueDate: raw.dueDate === undefined ? existing.dueDate : raw.dueDate,
-  });
-  if (!result.ok) return result;
-  const task = repository.updateTask(id, result.value);
+
+  let task: Task | undefined = existing;
+  const editsContent =
+    completed === undefined || Object.values(fields).some((value) => value !== undefined);
+  if (editsContent) {
+    const result = validateTaskInput({
+      title: fields.title === undefined ? existing.title : fields.title,
+      description: fields.description === undefined ? existing.description : fields.description,
+      priority: fields.priority === undefined ? existing.priority : fields.priority,
+      dueDate: fields.dueDate === undefined ? existing.dueDate : fields.dueDate,
+    });
+    if (!result.ok) return result;
+    task = repository.updateTask(id, result.value);
+  }
+  if (task && completed !== undefined) task = repository.setTaskCompleted(id, completed);
   return task ? { ok: true, task } : undefined;
 }
 

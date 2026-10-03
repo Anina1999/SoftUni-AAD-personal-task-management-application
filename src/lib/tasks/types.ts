@@ -14,6 +14,8 @@ export interface Task {
   priority: TaskPriority;
   /** Calendar date (`YYYY-MM-DD`, no time or time zone), or `null` if none. */
   dueDate: string | null;
+  /** When the task was marked as completed, or `null` while it is open. */
+  completedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -27,7 +29,7 @@ export interface TaskInput {
 }
 
 /** Field-level validation messages, keyed by input name. */
-export type TaskFieldErrors = Partial<Record<keyof TaskInput, string>>;
+export type TaskFieldErrors = Partial<Record<keyof TaskInput | "completed", string>>;
 
 /** One page of results plus the information needed to render pagination. */
 export interface Page<T> {

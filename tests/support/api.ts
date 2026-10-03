@@ -16,6 +16,7 @@ export function buildTask(overrides: Partial<Task> = {}): Task {
     description: "2 litres, semi-skimmed",
     priority: 3,
     dueDate: null,
+    completedAt: null,
     createdAt: "2026-10-01T09:00:00.000Z",
     updatedAt: "2026-10-01T09:00:00.000Z",
     ...overrides,

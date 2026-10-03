@@ -19,6 +19,7 @@ const TASK_COLUMNS = `
   description,
   priority,
   due_date AS dueDate,
+  completed_at AS completedAt,
   created_at AS createdAt,
   updated_at AS updatedAt
 `;
@@ -64,6 +65,14 @@ function prepareStatements(db: Database.Database) {
       `UPDATE tasks
        SET title = @title, description = @description, priority = @priority,
            due_date = @dueDate, updated_at = ${NOW}
+       WHERE id = @id
+       RETURNING ${TASK_COLUMNS}`,
+    ),
+    // Keeps the original completion time if the task is already completed.
+    // Not an edit of the task's content, so `updated_at` is left alone.
+    setCompleted: db.prepare<{ id: number; completed: 0 | 1 }, Task>(
+      `UPDATE tasks
+       SET completed_at = CASE WHEN @completed = 1 THEN COALESCE(completed_at, ${NOW}) END
        WHERE id = @id
        RETURNING ${TASK_COLUMNS}`,
     ),
@@ -133,6 +142,15 @@ export function insertTask(input: TaskInput): Task {
  */
 export function updateTask(id: number, input: TaskInput): Task | undefined {
   return statements().update.get({ id, ...input });
+}
+
+/**
+ * Marks a task as completed (keeping an earlier completion time) or as open.
+ * Doesn't change `updatedAt`.
+ * @returns The updated task, or `undefined` if no task has that id.
+ */
+export function setTaskCompleted(id: number, completed: boolean): Task | undefined {
+  return statements().setCompleted.get({ id, completed: completed ? 1 : 0 });
 }
 
 /**

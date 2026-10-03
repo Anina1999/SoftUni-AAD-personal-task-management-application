@@ -26,6 +26,7 @@ describe("tasks repository", () => {
         description: "2 litres",
         priority: 3,
         dueDate: null,
+        completedAt: null,
         createdAt: expect.stringMatching(ISO_TIMESTAMP),
         updatedAt: task.createdAt,
       });
@@ -52,6 +53,35 @@ describe("tasks repository", () => {
     ])("rejects %s at the database level too", (_case, overrides) => {
       expect(() => repository.insertTask({ ...taskInput(), ...overrides } as TaskInput)).toThrow(/CHECK/);
       expect(repository.countTasks()).toBe(0);
+    });
+  });
+
+  describe("setTaskCompleted", () => {
+    it("records when the task was completed, without touching updatedAt", () => {
+      const task = repository.insertTask(taskInput());
+
+      const completed = repository.setTaskCompleted(task.id, true)!;
+
+      expect(completed.completedAt).toMatch(ISO_TIMESTAMP);
+      expect(completed).toEqual({ ...task, completedAt: completed.completedAt });
+    });
+
+    it("keeps the original completion time when completed again", () => {
+      const task = repository.insertTask(taskInput());
+      const first = repository.setTaskCompleted(task.id, true)!;
+
+      expect(repository.setTaskCompleted(task.id, true)!.completedAt).toBe(first.completedAt);
+    });
+
+    it("clears the completion time when the task is reopened", () => {
+      const task = repository.insertTask(taskInput());
+      repository.setTaskCompleted(task.id, true);
+
+      expect(repository.setTaskCompleted(task.id, false)).toEqual(task);
+    });
+
+    it("returns undefined for an id that doesn't exist", () => {
+      expect(repository.setTaskCompleted(999, true)).toBeUndefined();
     });
   });
 
@@ -134,6 +164,7 @@ describe("tasks repository", () => {
         description: "1 litre",
         priority: 3,
         dueDate: null,
+        completedAt: null,
         createdAt: "2026-01-01T09:00:00.000Z",
         updatedAt: expect.stringMatching(ISO_TIMESTAMP),
       });

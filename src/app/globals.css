@@ -35,6 +35,8 @@
   --color-success-text: #2f6b2a;
   --color-success: #2e8540;
   --color-success-contrast: #ffffff;
+  --color-success-soft: #eef7ec;
+  --color-success-border: #b5d9b0;
   --color-focus: #d9486e;
   --color-skeleton: #f5e0d6;
   --color-backdrop: rgb(59 30 28 / 45%);
@@ -93,6 +95,8 @@
     --color-success-text: #a6dd9e;
     --color-success: #5cbf6a;
     --color-success-contrast: #10210f;
+    --color-success-soft: #1f2d21;
+    --color-success-border: #3c5e40;
     --color-focus: #ffb48c;
     --color-skeleton: #33262a;
     --color-backdrop: rgb(10 5 6 / 65%);

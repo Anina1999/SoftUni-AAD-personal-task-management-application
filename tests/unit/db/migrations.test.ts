@@ -9,7 +9,7 @@ afterEach(() => {
 });
 
 describe("runMigrations", () => {
-  it("upgrades a version 1 database, giving existing tasks priority 3 and no due date", () => {
+  it("upgrades a version 1 database: existing tasks get priority 3, no due date and stay open", () => {
     db = new Database(":memory:");
     db.exec(MIGRATIONS[0]);
     db.pragma("user_version = 1");
@@ -18,11 +18,12 @@ describe("runMigrations", () => {
     runMigrations(db);
 
     expect(db.pragma("user_version", { simple: true })).toBe(MIGRATIONS.length);
-    expect(db.prepare("SELECT title, description, priority, due_date FROM tasks").get()).toEqual({
+    expect(db.prepare("SELECT title, description, priority, due_date, completed_at FROM tasks").get()).toEqual({
       title: "Buy milk",
       description: "2 litres",
       priority: 3,
       due_date: null,
+      completed_at: null,
     });
   });
 
