@@ -9,17 +9,17 @@
   font-size: 0.9rem;
 }
 
-/* Quiet until hovered, so the destructive action doesn't draw the eye. */
+/* Soft red tint marks the destructive action; fills solid red on hover. */
 .danger {
-  border-color: transparent;
-  background: transparent;
-  color: var(--color-text-muted);
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 
 .danger:hover:not(:disabled) {
-  color: var(--color-danger);
   border-color: var(--color-danger);
-  background: transparent;
+  background: var(--color-danger);
+  color: var(--color-danger-contrast);
 }
 
 /* Bigger touch targets on phones. */

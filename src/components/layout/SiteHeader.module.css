@@ -2,7 +2,10 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--color-surface);
+  /* Frosted cream bar: the warm page background shows through on scroll. */
+  background: var(--color-header-bg);
+  -webkit-backdrop-filter: saturate(140%) blur(10px);
+  backdrop-filter: saturate(140%) blur(10px);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -34,9 +37,10 @@
   width: 28px;
   height: 28px;
   border-radius: var(--radius-sm);
-  background: var(--color-primary);
-  color: var(--color-primary-contrast);
+  background: var(--gradient-brand);
+  color: #fff;
   font-size: 0.95rem;
+  box-shadow: 0 2px 6px rgb(224 96 126 / 30%);
 }
 
 .nav {
@@ -48,6 +52,7 @@
   list-style: none;
 }
 
+/* Plain text link: only the letters react. */
 .navLink {
   display: inline-flex;
   align-items: center;
@@ -55,17 +60,39 @@
   padding: 0 var(--space-3);
   border-radius: var(--radius-sm);
   color: var(--color-text-muted);
-  font-weight: 600;
+  font-weight: 500;
   text-decoration: none;
+  /* A growing outline thickens the letters smoothly. Unlike font-weight it
+   * animates with any font and doesn't widen the word, so nothing shifts. */
+  -webkit-text-stroke: 0 currentColor;
+  transition: color 200ms ease, -webkit-text-stroke-width 200ms ease,
+    transform 200ms ease;
 }
 
-.navLink:hover {
-  background: var(--color-surface-muted);
-  color: var(--color-text);
-}
-
-.active,
-.active:hover {
-  background: var(--color-surface-muted);
+/* Current page: bold and in the primary colour. */
+.active {
   color: var(--color-primary);
+  -webkit-text-stroke-width: 0.7px;
+}
+
+/* Hover adds on top of either state: bolder letters and a slight grow. */
+.navLink:hover {
+  color: var(--color-primary);
+  -webkit-text-stroke-width: 0.7px;
+  transform: scale(1.06);
+}
+
+/* Already bold on the current page, so hovering there lightens the colour instead. */
+.active:hover {
+  color: var(--color-primary-light);
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navLink {
+    transition: none;
+  }
+  .navLink:hover {
+    transform: none;
+  }
 }
