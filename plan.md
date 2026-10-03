@@ -73,7 +73,7 @@ src/
       actions.ts                create / update / delete Server Actions (return results)
   components/
     layout/SiteHeader.tsx       App name + main navigation
-    layout/NavLinks.tsx         Home / Tasks links, highlights the active one
+    layout/NavLinks.tsx         Section links (Tasks), highlights the active one
     tasks/TaskCard.tsx          Title, description preview, date, Edit/Delete
     tasks/TaskDescription.tsx   Clamped description with "Show more"
     tasks/TaskActions.tsx       Edit/Delete buttons; opens the matching dialog
@@ -175,7 +175,7 @@ CREATE INDEX idx_tasks_created_at ON tasks (created_at DESC, id DESC);
   - Content is in a single centred column (max width about 760px) with comfortable spacing.
   - On wide screens the list uses a roomier card layout.
   - On phones there is a 16px side gutter and no horizontal scrolling.
-- **Navigation:** a sticky header shows the app name and **Home / Tasks** links, with the active page highlighted.
+- **Navigation:** a sticky header shows the logo and app name, which link to **Home**, and a **Tasks** link, highlighted when active.
 - **Home:** a "Total tasks" card (with a link to all tasks), an "Add a new task" card, and the 5 most recent tasks.
 - **Dialogs:**
   - Create and edit use the same form dialog. Delete uses a confirmation dialog that names the task.
@@ -246,7 +246,7 @@ CREATE INDEX idx_tasks_created_at ON tasks (created_at DESC, id DESC);
 
 **Functional (manual, in the browser, using `npm run dev` and then `npm start`)**
 - [ ] The first run creates `data/tasks.db` automatically, and Home shows a count of 0 and the empty state
-- [ ] The navigation shows Home and Tasks and highlights the current page
+- [ ] The logo leads to Home, and the Tasks link is highlighted on the Tasks page
 - [ ] Create a task from Home: the dialog opens without leaving the page, closes on save, a toast appears, and the count and recent list update
 - [ ] An empty or whitespace-only title, or a title over 200 characters, shows a field error in the dialog, and the typed values are kept
 - [ ] Edit a task in its dialog (pre-filled): the changes are saved, the card shows "Updated", and a toast appears

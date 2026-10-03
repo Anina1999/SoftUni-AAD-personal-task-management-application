@@ -90,7 +90,7 @@ src/
       loading.tsx               skeleton shown while the list loads
       actions.ts                create/update/delete Server Actions
   components/
-    layout/                     SiteHeader, NavLinks (Home / Tasks, active link)
+    layout/                     SiteHeader (logo links to Home), NavLinks (Tasks, active link)
     tasks/                      TaskCard, TaskDescription, TaskActions, NewTaskButton,
                                 TaskFormDialog + TaskForm, DeleteTaskDialog, SearchBar
     ui/                         Modal (native <dialog>), Toast, SubmitButton,

@@ -1,5 +1,5 @@
 /**
- * Site-wide header: app name and the main navigation (Home, Tasks).
+ * Site-wide header: the app logo/name (links to Home) and the main navigation.
  */
 import Link from "next/link";
 import { NavLinks } from "./NavLinks";
