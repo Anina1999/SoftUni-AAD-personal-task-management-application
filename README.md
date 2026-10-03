@@ -1,7 +1,7 @@
 # Personal Task Manager
 
 A personal task management web app built with **Next.js** (App Router) and **SQLite**.
-You can create, edit, delete, and search tasks. A task has a title and a description.
+You can create, edit, delete, and search tasks. A task has a title and, optionally, a description, a priority (1 to 4, where 1 is the most important; 3 by default) and a due date.
 
 The app has two pages, **Home** and **Tasks**, each with its own URL and rendered on the server. **Home** is the everyday workspace: you can list, search, create, edit, and delete tasks there without leaving the page. **Tasks** is the full, paginated list. Creating, editing, and deleting happen inline or in **dialogs on the current page**, which call a small **JSON API** (`/api/tasks`) that exposes every CRUD operation.
 
@@ -57,7 +57,7 @@ On **Home**:
 
 On both pages:
 - **New task** opens the create dialog.
-- **Edit** on a task opens the edit dialog, pre-filled.
+- **Edit** on a task opens the edit dialog, pre-filled. **Clear due date** in the dialog removes the due date.
 - **Delete** opens a confirmation dialog that names the task and warns that deletion is permanent.
 
 After each action the dialog closes, a short toast confirms what happened, and the count and lists update in place.
@@ -69,12 +69,12 @@ All responses are JSON. Errors have the shape `{ "error": "message", "errors": {
 | Method & path | Body | Success | Errors |
 |---|---|---|---|
 | `GET /api/tasks?q=&page=&pageSize=` | | `200` `{ items, total, page, pageSize, totalPages }` | |
-| `POST /api/tasks` | `{ "title": "…", "description": "…" }` | `201` task + `Location` header | `400`, `415` |
+| `POST /api/tasks` | `{ "title": "…", "description": "…", "priority": 1, "dueDate": "2026-12-24" }` (only `title` is required) | `201` task + `Location` header | `400`, `415` |
 | `GET /api/tasks/:id` | | `200` task | `404` |
-| `PATCH /api/tasks/:id` | any of `title`, `description` | `200` task | `400`, `404`, `415` |
+| `PATCH /api/tasks/:id` | any of `title`, `description`, `priority`, `dueDate` (`null` removes the due date) | `200` task | `400`, `404`, `415` |
 | `DELETE /api/tasks/:id` | | `204` | `404` |
 
-`pageSize` defaults to 20 (max 100). Write requests must use `Content-Type: application/json`, which also protects against cross-site form posts.
+`priority` is a whole number from 1 (most important) to 4 and defaults to 3. `dueDate` is a calendar date written as `YYYY-MM-DD`, or `null` for none (the default). `pageSize` defaults to 20 (max 100). Write requests must use `Content-Type: application/json`, which also protects against cross-site form posts.
 
 ```bash
 curl -X POST http://localhost:3000/api/tasks \
@@ -156,7 +156,7 @@ For example, *projects*:
 3. Add API routes under `src/app/api/projects/` (reuse `handle`, `readJsonObject`, and `errorResponse` from `src/app/api/http.ts`), a browser client like `src/lib/tasks/api-client.ts`, and pages under `src/app/projects/`. Reuse `Modal`, `Toast`, and `SubmitButton` for dialogs.
 4. Add a link to `NAV_ITEMS` in `src/components/layout/NavLinks.tsx`.
 
-To add a field to tasks (for example a due date): add a migration with `ALTER TABLE tasks ADD COLUMN ...` and a default value, then update `types.ts`, `validation.ts`, the repository columns, and `TaskForm`.
+To add a field to tasks (see how `priority` and `dueDate` were added in migration v2): add a migration with `ALTER TABLE tasks ADD COLUMN ...` and a default value, then update `types.ts`, `validation.ts`, the repository columns, and `TaskForm`.
 
 ---
 
@@ -169,8 +169,10 @@ tests/
   unit/                  Vitest: the server side
     tasks/               validation, service, repository and api (route handler) tests
     setup.ts             fresh in-memory database for every test
+    db/                  migrations (upgrading an existing database)
     support/database.ts  testDb(), setTimestamps()
-  component/tasks/       Cypress: the create, edit and delete dialogs
+    support/tasks.ts     taskInput() for writing straight to the repository
+  component/tasks/       Cypress: the create, edit and delete dialogs, and the task card
   support/
     component.tsx        cy.mount (toast provider + stubbed router), unstubbed-request guard
     api.ts               stubTask* helpers for /api/tasks, buildTask, apiError, heldResponse
@@ -179,7 +181,7 @@ tests/
 
 ### Unit tests (`npm run test:unit`)
 
-- **What they cover:** validation rules, service logic (id parsing, pagination clamping, partial updates), the repository's SQL (ordering, search with literal `%` and `_`, timestamps) and the `/api/tasks` route handlers (status codes, error bodies, the 415 JSON-only check).
+- **What they cover:** validation rules (including priority and due date), service logic (id parsing, pagination clamping, partial updates), the repository's SQL (ordering, search with literal `%` and `_`, timestamps, the database's own CHECK constraints), schema migrations and the `/api/tasks` route handlers (status codes, error bodies, the 415 JSON-only check).
 - **Database:** `getDb()` is replaced by a new in-memory SQLite database with the real migrations for every test (`tests/unit/setup.ts`). `data/tasks.db` is never touched.
 - **Route handlers** are called directly with real `NextRequest` objects and run through the real service and repository. They pin down the responses that the component tests stub.
 

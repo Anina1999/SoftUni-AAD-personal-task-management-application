@@ -5,14 +5,14 @@ describe("validateTaskInput", () => {
   it("accepts a valid task and trims both fields", () => {
     expect(validateTaskInput({ title: "  Buy milk  ", description: "  2 litres \n" })).toEqual({
       ok: true,
-      value: { title: "Buy milk", description: "2 litres" },
+      value: { title: "Buy milk", description: "2 litres", priority: 3, dueDate: null },
     });
   });
 
   it("treats a missing description as empty", () => {
     expect(validateTaskInput({ title: "Buy milk" })).toEqual({
       ok: true,
-      value: { title: "Buy milk", description: "" },
+      value: { title: "Buy milk", description: "", priority: 3, dueDate: null },
     });
   });
 
@@ -74,7 +74,78 @@ describe("validateTaskInput", () => {
     const result = validateTaskInput({ title: "t", description });
     expect(result).toEqual({
       ok: true,
-      value: { title: "t", description: "a\n".repeat(1700).trimEnd() },
+      value: { title: "t", description: "a\n".repeat(1700).trimEnd(), priority: 3, dueDate: null },
+    });
+  });
+
+  describe("priority", () => {
+    it.each([1, 2, 3, 4])("accepts %i", (priority) => {
+      expect(validateTaskInput({ title: "t", priority })).toMatchObject({ ok: true, value: { priority } });
+    });
+
+    it.each([
+      ["missing", undefined],
+      ["null", null],
+    ])("defaults to 3 when %s", (_case, priority) => {
+      expect(validateTaskInput({ title: "t", priority })).toMatchObject({ ok: true, value: { priority: 3 } });
+    });
+
+    it.each([
+      ["below the range", 0],
+      ["above the range", 5],
+      ["not a whole number", 2.5],
+      ["a numeric string", "2"],
+      ["a boolean", true],
+    ])("rejects a priority that is %s", (_case, priority) => {
+      expect(validateTaskInput({ title: "t", priority })).toEqual({
+        ok: false,
+        errors: { priority: "Priority must be 1, 2, 3 or 4." },
+      });
+    });
+  });
+
+  describe("due date", () => {
+    it("accepts a calendar date as YYYY-MM-DD, including 29 February in a leap year", () => {
+      expect(validateTaskInput({ title: "t", dueDate: "2026-10-31" })).toMatchObject({
+        ok: true,
+        value: { dueDate: "2026-10-31" },
+      });
+      expect(validateTaskInput({ title: "t", dueDate: "2028-02-29" })).toMatchObject({
+        ok: true,
+        value: { dueDate: "2028-02-29" },
+      });
+    });
+
+    it("trims surrounding whitespace", () => {
+      expect(validateTaskInput({ title: "t", dueDate: " 2026-10-31 " })).toMatchObject({
+        ok: true,
+        value: { dueDate: "2026-10-31" },
+      });
+    });
+
+    it.each([
+      ["missing", undefined],
+      ["null", null],
+      ["an empty string", ""],
+      ["only whitespace", "  "],
+    ])("means no due date when %s", (_case, dueDate) => {
+      expect(validateTaskInput({ title: "t", dueDate })).toMatchObject({ ok: true, value: { dueDate: null } });
+    });
+
+    it.each([
+      ["a day that doesn't exist", "2026-02-30"],
+      ["29 February outside a leap year", "2027-02-29"],
+      ["month 13", "2026-13-01"],
+      ["without zero padding", "2026-1-5"],
+      ["in another format", "31/10/2026"],
+      ["a timestamp", "2026-10-31T09:00:00Z"],
+      ["a word", "tomorrow"],
+      ["a number", 20261031],
+    ])("rejects a due date that is %s", (_case, dueDate) => {
+      expect(validateTaskInput({ title: "t", dueDate })).toEqual({
+        ok: false,
+        errors: { dueDate: "Due date must be a valid date (YYYY-MM-DD)." },
+      });
     });
   });
 });

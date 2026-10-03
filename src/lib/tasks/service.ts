@@ -9,7 +9,7 @@
 import "server-only";
 import * as repository from "./repository";
 import type { Page, Task, TaskFieldErrors } from "./types";
-import { validateTaskInput } from "./validation";
+import { type RawTaskInput, validateTaskInput } from "./validation";
 
 /** Number of tasks shown per list page. */
 export const PAGE_SIZE = 20;
@@ -80,8 +80,11 @@ export function getTask(id: number): Task | undefined {
   return repository.findTaskById(id);
 }
 
-/** Validates and creates a task. */
-export function createTask(raw: { title?: unknown; description?: unknown }): MutationResult {
+/**
+ * Validates and creates a task. `priority` defaults to 3 and `dueDate` to
+ * `null` when left out.
+ */
+export function createTask(raw: RawTaskInput): MutationResult {
   const result = validateTaskInput(raw);
   if (!result.ok) return result;
   return { ok: true, task: repository.insertTask(result.value) };
@@ -89,13 +92,11 @@ export function createTask(raw: { title?: unknown; description?: unknown }): Mut
 
 /**
  * Validates and updates a task. Fields that are left out (`undefined`) keep
- * their current value, so callers can send only what changed.
+ * their current value, so callers can send only what changed. A `null`
+ * `dueDate` removes the due date; a `null` `priority` resets it to 3.
  * @returns `undefined` if the task doesn't exist, otherwise the mutation result.
  */
-export function updateTask(
-  id: number,
-  raw: { title?: unknown; description?: unknown },
-): MutationResult | undefined {
+export function updateTask(id: number, raw: RawTaskInput): MutationResult | undefined {
   // better-sqlite3 is synchronous, so no other write can run between this
   // read and the update below.
   const existing = repository.findTaskById(id);
@@ -103,6 +104,8 @@ export function updateTask(
   const result = validateTaskInput({
     title: raw.title === undefined ? existing.title : raw.title,
     description: raw.description === undefined ? existing.description : raw.description,
+    priority: raw.priority === undefined ? existing.priority : raw.priority,
+    dueDate: raw.dueDate === undefined ? existing.dueDate : raw.dueDate,
   });
   if (!result.ok) return result;
   const task = repository.updateTask(id, result.value);

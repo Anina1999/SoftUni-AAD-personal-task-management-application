@@ -9,12 +9,15 @@
  *   keeps the values the user typed (inputs are controlled).
  * - Uses `TASK_LIMITS` (the same limits the server enforces) for `maxLength`
  *   and live character counters.
+ * - Priority and due date are optional: a new task starts at priority 3 with
+ *   no due date, and an empty date field is sent as `dueDate: null`.
  */
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { formatPriority } from "@/lib/format";
 import * as api from "@/lib/tasks/api-client";
-import type { Task, TaskFieldErrors } from "@/lib/tasks/types";
-import { TASK_LIMITS } from "@/lib/tasks/validation";
+import type { Task, TaskFieldErrors, TaskPriority } from "@/lib/tasks/types";
+import { DEFAULT_PRIORITY, TASK_LIMITS, TASK_PRIORITIES } from "@/lib/tasks/validation";
 import styles from "./TaskForm.module.css";
 
 interface TaskFormProps {
@@ -43,12 +46,28 @@ function readText(formData: FormData, name: string): string {
 export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
   const [title, setTitle] = useState(task?.title ?? "");
   const [description, setDescription] = useState(task?.description ?? "");
+  const [priority, setPriority] = useState<TaskPriority>(task?.priority ?? DEFAULT_PRIORITY);
+  const [dueDate, setDueDate] = useState(task?.dueDate ?? "");
+
+  // React resets the form after every submit. Controlled inputs survive that
+  // because React mirrors their value into the `value` attribute, but a
+  // controlled <select> doesn't, so it would jump back to its first option
+  // when the API rejects the task. Mirroring the choice into `defaultSelected`
+  // makes the reset keep it.
+  const priorityRef = useRef<HTMLSelectElement>(null);
+  useEffect(() => {
+    for (const option of priorityRef.current?.options ?? []) {
+      option.defaultSelected = option.value === String(priority);
+    }
+  }, [priority]);
 
   const [state, formAction] = useActionState<TaskFormState, FormData>(
     async (_previous, formData) => {
       const input = {
         title: readText(formData, "title"),
         description: readText(formData, "description"),
+        priority: Number(readText(formData, "priority")) as TaskPriority,
+        dueDate: readText(formData, "dueDate") || null,
       };
       const result = task ? await api.updateTask(task.id, input) : await api.createTask(input);
       if (result.ok) {
@@ -101,6 +120,67 @@ export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
           <span id="task-title-count" className="field-counter">
             {title.length}/{TASK_LIMITS.titleMax}
           </span>
+        </div>
+      </div>
+
+      <div className={styles.row}>
+        <div className="field">
+          <label htmlFor="task-priority" className="field-label">
+            Priority
+          </label>
+          <select
+            ref={priorityRef}
+            id="task-priority"
+            name="priority"
+            className="field-input"
+            value={priority}
+            onChange={(event) => setPriority(Number(event.target.value) as TaskPriority)}
+            aria-invalid={errors.priority ? true : undefined}
+            aria-describedby={errors.priority ? "task-priority-error" : undefined}
+          >
+            {TASK_PRIORITIES.map((option) => (
+              <option key={option} value={option}>
+                {option} · {formatPriority(option)}
+              </option>
+            ))}
+          </select>
+          {errors.priority && (
+            <div className="field-meta">
+              <span id="task-priority-error" className="field-error">
+                {errors.priority}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="field">
+          <label htmlFor="task-due-date" className="field-label">
+            Due date <span className="muted">(optional)</span>
+          </label>
+          <input
+            id="task-due-date"
+            name="dueDate"
+            type="date"
+            className="field-input"
+            value={dueDate}
+            onChange={(event) => setDueDate(event.target.value)}
+            aria-invalid={errors.dueDate ? true : undefined}
+            aria-describedby={errors.dueDate ? "task-due-date-error" : undefined}
+          />
+          {(errors.dueDate || dueDate) && (
+            <div className="field-meta">
+              {errors.dueDate && (
+                <span id="task-due-date-error" className="field-error">
+                  {errors.dueDate}
+                </span>
+              )}
+              {dueDate && (
+                <button type="button" className={styles.clear} onClick={() => setDueDate("")}>
+                  Clear due date
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

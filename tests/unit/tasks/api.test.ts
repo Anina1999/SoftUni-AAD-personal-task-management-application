@@ -10,6 +10,7 @@ import * as collection from "@/app/api/tasks/route";
 import * as item from "@/app/api/tasks/[id]/route";
 import * as repository from "@/lib/tasks/repository";
 import { testDb } from "../support/database";
+import { taskInput } from "../support/tasks";
 
 const BASE_URL = "http://localhost/api/tasks";
 const NOT_FOUND = { error: "Task not found. It may have been deleted." };
@@ -46,6 +47,35 @@ describe("POST /api/tasks", () => {
     expect(task).toMatchObject({ id: expect.any(Number), title: "Buy milk", description: "2 litres" });
     expect(response.headers.get("Location")).toBe(`/api/tasks/${task.id}`);
     expect(repository.findTaskById(task.id)).toEqual(task);
+  });
+
+  it("defaults to priority 3 and no due date when they are left out", async () => {
+    const task = await (await postTask({ title: "Buy milk" })).json();
+
+    expect(task).toMatchObject({ priority: 3, dueDate: null });
+  });
+
+  it("stores the priority and due date that are sent", async () => {
+    const response = await postTask({ title: "Book flights", priority: 1, dueDate: "2026-12-24" });
+    const task = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(task).toMatchObject({ priority: 1, dueDate: "2026-12-24" });
+    expect(repository.findTaskById(task.id)).toEqual(task);
+  });
+
+  it("rejects an invalid priority or due date with 400 and field errors", async () => {
+    const response = await postTask({ title: "Buy milk", priority: 0, dueDate: "2026-02-30" });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: "The task is not valid.",
+      errors: {
+        priority: "Priority must be 1, 2, 3 or 4.",
+        dueDate: "Due date must be a valid date (YYYY-MM-DD).",
+      },
+    });
+    expect(repository.countTasks()).toBe(0);
   });
 
   it("rejects invalid input with 400 and field errors", async () => {
@@ -89,8 +119,8 @@ describe("POST /api/tasks", () => {
 
 describe("GET /api/tasks", () => {
   it("returns the first page, newest first", async () => {
-    const older = repository.insertTask({ title: "Older", description: "" });
-    const newer = repository.insertTask({ title: "Newer", description: "" });
+    const older = repository.insertTask(taskInput({ title: "Older", description: "" }));
+    const newer = repository.insertTask(taskInput({ title: "Newer", description: "" }));
 
     const response = await listTasks();
 
@@ -105,8 +135,8 @@ describe("GET /api/tasks", () => {
   });
 
   it("applies the search, page and page size from the query string", async () => {
-    for (let i = 1; i <= 5; i++) repository.insertTask({ title: `Buy item ${i}`, description: "" });
-    repository.insertTask({ title: "Call mum", description: "" });
+    for (let i = 1; i <= 5; i++) repository.insertTask(taskInput({ title: `Buy item ${i}`, description: "" }));
+    repository.insertTask(taskInput({ title: "Call mum", description: "" }));
 
     const body = await (await listTasks("?q=buy&page=2&pageSize=2")).json();
 
@@ -117,7 +147,7 @@ describe("GET /api/tasks", () => {
 
 describe("GET /api/tasks/:id", () => {
   it("returns the task", async () => {
-    const task = repository.insertTask({ title: "Buy milk", description: "" });
+    const task = repository.insertTask(taskInput({ title: "Buy milk", description: "" }));
 
     const response = await getTask(String(task.id));
 
@@ -135,7 +165,7 @@ describe("GET /api/tasks/:id", () => {
 
 describe("PATCH /api/tasks/:id", () => {
   it("updates only the fields that are sent", async () => {
-    const task = repository.insertTask({ title: "Buy milk", description: "2 litres" });
+    const task = repository.insertTask(taskInput({ title: "Buy milk", description: "2 litres" }));
 
     const response = await patchTask(String(task.id), { title: "Buy oat milk" });
 
@@ -147,8 +177,19 @@ describe("PATCH /api/tasks/:id", () => {
     });
   });
 
+  it("changes the priority and due date, and removes the due date when it is null", async () => {
+    const task = repository.insertTask(taskInput({ title: "Book flights", priority: 1, dueDate: "2026-12-24" }));
+
+    const changed = await patchTask(String(task.id), { priority: 2, dueDate: "2027-01-15" });
+    expect(await changed.json()).toMatchObject({ title: "Book flights", priority: 2, dueDate: "2027-01-15" });
+
+    const cleared = await patchTask(String(task.id), { dueDate: null });
+    expect(cleared.status).toBe(200);
+    expect(await cleared.json()).toMatchObject({ priority: 2, dueDate: null });
+  });
+
   it("rejects invalid input with 400 and leaves the task unchanged", async () => {
-    const task = repository.insertTask({ title: "Buy milk", description: "" });
+    const task = repository.insertTask(taskInput({ title: "Buy milk", description: "" }));
 
     const response = await patchTask(String(task.id), { title: "   " });
 
@@ -168,7 +209,7 @@ describe("PATCH /api/tasks/:id", () => {
   });
 
   it("rejects a body that isn't sent as JSON with 415", async () => {
-    const task = repository.insertTask({ title: "Buy milk", description: "" });
+    const task = repository.insertTask(taskInput({ title: "Buy milk", description: "" }));
 
     const response = await item.PATCH(
       new NextRequest(`${BASE_URL}/${task.id}`, { method: "PATCH", body: "title=x" }),
@@ -182,7 +223,7 @@ describe("PATCH /api/tasks/:id", () => {
 
 describe("DELETE /api/tasks/:id", () => {
   it("deletes the task: 204 with no body", async () => {
-    const task = repository.insertTask({ title: "Buy milk", description: "" });
+    const task = repository.insertTask(taskInput({ title: "Buy milk", description: "" }));
 
     const response = await deleteTask(String(task.id));
 
@@ -192,7 +233,7 @@ describe("DELETE /api/tasks/:id", () => {
   });
 
   it("answers 404 when the task is already gone", async () => {
-    const task = repository.insertTask({ title: "Buy milk", description: "" });
+    const task = repository.insertTask(taskInput({ title: "Buy milk", description: "" }));
     await deleteTask(String(task.id));
 
     const response = await deleteTask(String(task.id));
