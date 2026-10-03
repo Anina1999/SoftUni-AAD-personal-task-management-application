@@ -5,14 +5,50 @@
   margin-bottom: var(--space-4);
 }
 
-.input {
-  flex: 1 1 240px;
-  min-height: 44px;
+/* Visible label: takes its own row above the input. */
+.label {
+  flex-basis: 100%;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
-@media (max-width: 480px) {
-  .search > :not(.input) {
-    flex: 1 1 auto;
+.field {
+  position: relative;
+  flex: 1 1 240px;
+}
+
+.input {
+  min-height: 44px;
+  padding-right: calc(var(--space-3) * 2 + 16px); /* room for the spinner */
+}
+
+/* The "Clear" button replaces the browser's own clear icon. */
+.input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.spinner {
+  position: absolute;
+  top: 50%;
+  right: var(--space-3);
+  width: 16px;
+  height: 16px;
+  margin-top: -8px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2s;
   }
 }
 
