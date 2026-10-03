@@ -4,16 +4,16 @@
  * Create/edit form for a task, shown inside `TaskFormDialog`.
  *
  * - Without `task` it creates a new task; with `task` it edits that task.
- * - Submits to a Server Action through `useActionState`. On success it calls
- *   `onSuccess`; on failure it shows field-level errors and keeps the values
- *   the user typed (inputs are controlled, so they survive the round trip).
+ * - Submits to the tasks API (`/api/tasks`) through `useActionState`. On
+ *   success it calls `onSuccess`; on failure it shows field-level errors and
+ *   keeps the values the user typed (inputs are controlled).
  * - Uses `TASK_LIMITS` (the same limits the server enforces) for `maxLength`
  *   and live character counters.
  */
 import { useActionState, useState } from "react";
-import { createTaskAction, updateTaskAction, type TaskFormState } from "@/app/tasks/actions";
 import { SubmitButton } from "@/components/ui/SubmitButton";
-import type { Task } from "@/lib/tasks/types";
+import * as api from "@/lib/tasks/api-client";
+import type { Task, TaskFieldErrors } from "@/lib/tasks/types";
 import { TASK_LIMITS } from "@/lib/tasks/validation";
 import styles from "./TaskForm.module.css";
 
@@ -24,24 +24,41 @@ interface TaskFormProps {
   onCancel: () => void;
 }
 
-const NETWORK_ERROR = "Could not reach the server. Check your connection and try again.";
+type TaskFormState =
+  | { status: "idle" }
+  | {
+      status: "error";
+      errors?: TaskFieldErrors;
+      /** General error not tied to a single field. */
+      formError?: string;
+    };
+
+const TASK_GONE = "This task no longer exists. It may have been deleted.";
+
+function readText(formData: FormData, name: string): string {
+  const entry = formData.get(name);
+  return typeof entry === "string" ? entry : "";
+}
 
 export function TaskForm({ task, onSuccess, onCancel }: TaskFormProps) {
   const [title, setTitle] = useState(task?.title ?? "");
   const [description, setDescription] = useState(task?.description ?? "");
 
   const [state, formAction] = useActionState<TaskFormState, FormData>(
-    async (previous, formData) => {
-      let result: TaskFormState;
-      try {
-        result = task
-          ? await updateTaskAction(task.id, previous, formData)
-          : await createTaskAction(previous, formData);
-      } catch {
-        result = { status: "error", formError: NETWORK_ERROR, values: { title, description } };
+    async (_previous, formData) => {
+      const input = {
+        title: readText(formData, "title"),
+        description: readText(formData, "description"),
+      };
+      const result = task ? await api.updateTask(task.id, input) : await api.createTask(input);
+      if (result.ok) {
+        onSuccess(result.data);
+        return { status: "idle" };
       }
-      if (result.status === "success") onSuccess(result.task);
-      return result;
+      if (task && result.status === 404) return { status: "error", formError: TASK_GONE };
+      return result.errors
+        ? { status: "error", errors: result.errors }
+        : { status: "error", formError: result.error };
     },
     { status: "idle" },
   );
