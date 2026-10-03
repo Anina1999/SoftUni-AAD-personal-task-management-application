@@ -4,6 +4,14 @@
     "types": ["cypress", "node"],
     "incremental": false
   },
-  "include": ["**/*.ts", "**/*.tsx", "../cypress.config.ts", "../next-env.d.ts"],
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "../cypress.config.ts",
+    "../vitest.config.mts",
+    "../next-env.d.ts",
+    "../.next/types/**/*.ts",
+    "../.next/dev/types/**/*.ts"
+  ],
   "exclude": [".artifacts"]
 }

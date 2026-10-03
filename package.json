@@ -13,6 +13,9 @@
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit && tsc --noEmit -p tests",
     "seed": "node scripts/seed.mjs",
+    "test": "npm run test:unit && npm run test:component",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
     "test:component": "cypress run --component",
     "test:component:open": "cypress open --component"
   },
@@ -34,6 +37,7 @@
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.3.8",
     "typescript": "^6.0.3",
-    "vite": "^8.3.2"
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
   }
 }
