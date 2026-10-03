@@ -1,0 +1,23 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+
+# SQLite database (local user data — never commit)
+/data/
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+
+# env files
+.env*
+!.env.example
+
+# misc
+.DS_Store
+npm-debug.log*
