@@ -3,7 +3,7 @@
 A personal task management web app built with **Next.js** (App Router) and **SQLite**.
 You can create, edit, delete, and search tasks. A task has a title and a description.
 
-The app has two pages, **Home** and **Tasks**, each with its own URL and rendered on the server. Creating, editing, and deleting a task happen in **dialogs on the current page**: you never leave the page you're on. The dialogs submit to Server Actions, which save to SQLite and refresh the page's data.
+The app has two pages, **Home** and **Tasks**, each with its own URL and rendered on the server. **Home** is the everyday workspace: you can list, search, create, edit, and delete tasks there without leaving the page. **Tasks** is the full, paginated list. Creating, editing, and deleting happen inline or in **dialogs on the current page**, which call a small **JSON API** (`/api/tasks`) that exposes every CRUD operation.
 
 ---
 
@@ -44,15 +44,39 @@ All variables are listed in `.env.example`. To customise them, copy it to `.env.
 
 | URL | Page |
 |---|---|
-| `/` | **Home**: a "Total tasks" card, an "Add a new task" card, and the 5 most recent tasks |
-| `/tasks?q=&page=` | **Tasks**: all tasks, with search and pagination (20 per page) |
+| `/?q=` | **Home** (titled "Your tasks"): search box at the top, a "New task" button, and the 10 newest matching tasks, with a link to the full list |
+| `/tasks?q=&page=` | **Tasks**: all tasks, with live search and pagination (20 per page) |
+
+On **Home**:
+- **Search** updates the list as you type. **Clear** resets it.
+- **See all in Tasks** opens the Tasks page with the same search.
 
 On both pages:
-- **Add task** / **New task** opens the create dialog.
-- **Edit** on a task opens the same dialog, pre-filled.
+- **New task** opens the create dialog.
+- **Edit** on a task opens the edit dialog, pre-filled.
 - **Delete** opens a confirmation dialog that names the task and warns that deletion is permanent.
 
 After each action the dialog closes, a short toast confirms what happened, and the count and lists update in place.
+
+## API
+
+All responses are JSON. Errors have the shape `{ "error": "message", "errors": { "title": "…" } }` (`errors` only for validation failures).
+
+| Method & path | Body | Success | Errors |
+|---|---|---|---|
+| `GET /api/tasks?q=&page=&pageSize=` | | `200` `{ items, total, page, pageSize, totalPages }` | |
+| `POST /api/tasks` | `{ "title": "…", "description": "…" }` | `201` task + `Location` header | `400`, `415` |
+| `GET /api/tasks/:id` | | `200` task | `404` |
+| `PATCH /api/tasks/:id` | any of `title`, `description` | `200` task | `400`, `404`, `415` |
+| `DELETE /api/tasks/:id` | | `204` | `404` |
+
+`pageSize` defaults to 20 (max 100). Write requests must use `Content-Type: application/json`, which also protects against cross-site form posts.
+
+```bash
+curl -X POST http://localhost:3000/api/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Buy milk","description":"2 litres"}'
+```
 
 ---
 
@@ -61,9 +85,10 @@ After each action the dialog closes, a short toast confirms what happened, and t
 The code is split into layers. Each layer only calls the one directly below it.
 
 ```
-Presentation   src/app/**/page.tsx, src/components/**   renders HTML, reads URL params
+Presentation   src/app/**/page.tsx, src/components/**   renders HTML, reads URL params;
+               src/lib/tasks/api-client.ts              dialogs call the API
      │
-Actions        src/app/tasks/actions.ts                 reads FormData, returns result, revalidates
+API            src/app/api/tasks/**/route.ts            parses JSON, returns JSON + HTTP status
      │
 Service        src/lib/tasks/service.ts                 business rules, validation, pagination
      │
@@ -73,8 +98,9 @@ Database       src/lib/db/connection.ts, migrations.ts  connection, PRAGMAs, sch
 ```
 
 - Pages and components never import the repository or the database directly.
+- Server Component pages read through the service directly (no HTTP round trip to their own server). Every write goes through the API.
 - `src/lib/tasks/validation.ts` is the single source of the input rules. The service uses it, and the form uses the same limits for `maxLength` and character counters.
-- The service layer doesn't depend on Next.js, so a future REST API (`app/api/**/route.ts`) or a CLI script can reuse it unchanged.
+- The service layer doesn't depend on Next.js, so a CLI script can reuse it unchanged.
 
 ### Folder structure
 
@@ -82,22 +108,25 @@ Database       src/lib/db/connection.ts, migrations.ts  connection, PRAGMAs, sch
 src/
   app/
     layout.tsx                  shell: header + main + ToastProvider
-    page.tsx, home.module.css   Home page (overview cards + recent tasks)
+    page.tsx, home.module.css   Home page (live search + newest tasks)
     error.tsx, not-found.tsx    error boundary ("Try again") and 404 page
     icon.svg, globals.css
     tasks/
       page.tsx                  Tasks page (search + pagination)
       loading.tsx               skeleton shown while the list loads
-      actions.ts                create/update/delete Server Actions
+    api/
+      http.ts                   shared JSON error/body helpers
+      tasks/route.ts            GET list, POST create
+      tasks/[id]/route.ts       GET, PATCH, DELETE one task
   components/
     layout/                     SiteHeader (logo links to Home), NavLinks (Tasks, active link)
     tasks/                      TaskCard, TaskDescription, TaskActions, NewTaskButton,
-                                TaskFormDialog + TaskForm, DeleteTaskDialog, SearchBar
+                                TaskFormDialog + TaskForm, DeleteTaskDialog, SearchBar (live)
     ui/                         Modal (native <dialog>), Toast, SubmitButton,
                                 Pagination, EmptyState
   lib/
     db/                         connection + migrations
-    tasks/                      types, validation, repository, service
+    tasks/                      types, validation, repository, service, api-client (browser)
     format.ts                   date formatting
 scripts/seed.mjs                sample data generator
 ```
@@ -105,14 +134,14 @@ scripts/seed.mjs                sample data generator
 ### Request flow examples
 
 - **Viewing the list:** `GET /tasks?q=milk&page=2` → the `tasks/page.tsx` Server Component → `service.listTasks()` → `repository.countTasks()` and `repository.findTasks()` → HTML.
+- **Searching on Home:** typing in `SearchBar` → after 250 ms `router.replace("/?q=milk")` in a transition → `page.tsx` re-renders on the server → the list swaps in place while the input keeps focus.
 - **Creating a task:**
-  1. "Add task" opens `TaskFormDialog`.
-  2. `TaskForm` submits to `createTaskAction`.
-  3. `service.createTask()` validates the input, and `repository.insertTask()` saves it.
-  4. `revalidatePath("/", "layout")` makes Next.js re-render the current page with fresh data.
-  5. The action returns `{ status: "success" }`, and the dialog closes and shows a toast.
-- **Invalid input:** the action returns `{ status: "error", errors, values }`. The dialog stays open and shows field messages, and the text the user typed is kept.
-- **Deleting a task:** `DeleteTaskDialog` asks for confirmation → `deleteTaskAction` → `service.deleteTask()` → revalidate → toast.
+  1. "New task" opens `TaskFormDialog`; `TaskForm` calls `api-client.createTask()`.
+  2. That sends `POST /api/tasks` with a JSON body.
+  3. The route handler calls `service.createTask()`, which validates the input, and `repository.insertTask()` saves it. The handler returns `201` with the task.
+  4. The client shows a toast and calls `router.refresh()`, so Next.js re-renders the current page with fresh data.
+- **Invalid input:** the API returns `400 { error, errors }`. The dialog stays open and shows field messages, and the text the user typed is kept.
+- **Deleting a task:** `DeleteTaskDialog` asks for confirmation → `DELETE /api/tasks/:id` → `service.deleteTask()` → `204` → toast + refresh.
 
 ### Adding a new feature module
 
@@ -120,7 +149,7 @@ For example, *projects*:
 
 1. Add a migration to the end of `MIGRATIONS` in `src/lib/db/migrations.ts`. Never edit existing migrations.
 2. Create `src/lib/projects/` with `types.ts`, `validation.ts`, `repository.ts`, and `service.ts`, following the tasks module.
-3. Create pages under `src/app/projects/` and Server Actions in `src/app/projects/actions.ts`. Reuse `Modal`, `Toast`, and `SubmitButton` for dialogs.
+3. Add API routes under `src/app/api/projects/` (reuse `handle`, `readJsonObject`, and `errorResponse` from `src/app/api/http.ts`), a browser client like `src/lib/tasks/api-client.ts`, and pages under `src/app/projects/`. Reuse `Modal`, `Toast`, and `SubmitButton` for dialogs.
 4. Add a link to `NAV_ITEMS` in `src/components/layout/NavLinks.tsx`.
 
 To add a field to tasks (for example a due date): add a migration with `ALTER TABLE tasks ADD COLUMN ...` and a default value, then update `types.ts`, `validation.ts`, the repository columns, and `TaskForm`.
